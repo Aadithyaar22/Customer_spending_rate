@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Spending Predictor</title>
+    <style>
+        :root {
+            --ink: #17202a;
+            --muted: #667085;
+            --line: #d7dee8;
+            --panel: #ffffff;
+            --panel-soft: #f6f8fb;
+            --accent: #0f766e;
+            --accent-dark: #115e59;
+            --gold: #c47f1f;
+            --rose: #b42318;
+            --shadow: 0 18px 45px rgba(23, 32, 42, 0.12);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            color: var(--ink);
+            font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background:
+                linear-gradient(135deg, rgba(15, 118, 110, 0.08), transparent 32%),
+                linear-gradient(315deg, rgba(196, 127, 31, 0.1), transparent 34%),
+                #eef2f6;
+        }
+
+        .page {
+            width: min(1180px, calc(100% - 32px));
+            margin: 0 auto;
+            padding: 36px 0;
+        }
+
+        .topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 28px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-mark {
+            display: grid;
+            width: 44px;
+            height: 44px;
+            place-items: center;
+            border-radius: 8px;
+            color: #fff;
+            font-weight: 800;
+            background: var(--accent);
+            box-shadow: var(--shadow);
+        }
+
+        .brand h1 {
+            margin: 0;
+            font-size: clamp(1.5rem, 2vw, 2.2rem);
+            letter-spacing: 0;
+        }
+
+        .brand p {
+            margin: 3px 0 0;
+            color: var(--muted);
+        }
+
+        .status-pill {
+            border: 1px solid rgba(15, 118, 110, 0.25);
+            color: var(--accent-dark);
+            background: rgba(15, 118, 110, 0.08);
+            padding: 8px 12px;
+            border-radius: 999px;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .layout {
+            display: grid;
+            grid-template-columns: minmax(300px, 420px) 1fr;
+            gap: 22px;
+            align-items: start;
+        }
+
+        .panel {
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+        }
+
+        .predictor {
+            padding: 24px;
+        }
+
+        .panel-title {
+            margin: 0 0 4px;
+            font-size: 1.08rem;
+        }
+
+        .panel-subtitle {
+            margin: 0 0 22px;
+            color: var(--muted);
+            line-height: 1.5;
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #344054;
+            font-size: 0.92rem;
+            font-weight: bold;
+        }
+
+        input,
+        select {
+            width: 100%;
+            min-height: 46px;
+            padding: 10px 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            color: var(--ink);
+            background: #fff;
+            font: inherit;
+            outline: none;
+            transition: border-color 160ms ease, box-shadow 160ms ease;
+        }
+
+        input:focus,
+        select:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 4px rgba(15, 118, 110, 0.12);
+        }
+
+        button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            min-height: 48px;
+            background-color: var(--accent);
+            color: white;
+            padding: 12px 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font: inherit;
+            font-weight: 800;
+            transition: transform 160ms ease, background-color 160ms ease;
+        }
+
+        button:hover {
+            background-color: var(--accent-dark);
+            transform: translateY(-1px);
+        }
+
+        .result,
+        .error {
+            margin-top: 18px;
+            padding: 18px;
+            border-radius: 8px;
+        }
+
+        .result {
+            color: #064e3b;
+            background-color: #dcfce7;
+            border: 1px solid #86efac;
+        }
+
+        .error {
+            color: var(--rose);
+            background: #fff1f2;
+            border: 1px solid #fecdd3;
+        }
+
+        .score {
+            display: flex;
+            align-items: baseline;
+            gap: 6px;
+            margin-top: 8px;
+        }
+
+        .score strong {
+            font-size: 2.6rem;
+            line-height: 1;
+        }
+
+        .score span {
+            color: var(--muted);
+            font-weight: 700;
+        }
+
+        .insights {
+            display: grid;
+            gap: 22px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 12px;
+        }
+
+        .stat {
+            padding: 18px;
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: 8px;
+        }
+
+        .stat span {
+            color: var(--muted);
+            font-size: 0.84rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .stat strong {
+            display: block;
+            margin-top: 8px;
+            font-size: 1.55rem;
+        }
+
+        .chart-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 14px;
+        }
+
+        .chart {
+            overflow: hidden;
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: 8px;
+        }
+
+        .chart img {
+            display: block;
+            width: 100%;
+            aspect-ratio: 4 / 3;
+            object-fit: cover;
+            background: var(--panel-soft);
+        }
+
+        .chart figcaption {
+            padding: 12px 14px 14px;
+            color: #344054;
+            font-weight: 700;
+        }
+
+        .visual-link {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 18px;
+            color: inherit;
+            text-decoration: none;
+            background: #fff;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+        }
+
+        .visual-link strong {
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .visual-link span {
+            color: var(--muted);
+        }
+
+        .visual-link b {
+            flex: 0 0 auto;
+            color: var(--gold);
+            font-size: 1.4rem;
+        }
+
+        @media (max-width: 900px) {
+            .layout,
+            .chart-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 560px) {
+            .page {
+                width: min(100% - 20px, 1180px);
+                padding: 18px 0;
+            }
+
+            .topbar {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main class="page">
+        <header class="topbar">
+            <div class="brand">
+                <div class="brand-mark">CS</div>
+                <div>
+                    <h1>Customer Spending Predictor</h1>
+                    <p>Estimate a customer spending score from mall demographic signals.</p>
+                </div>
+            </div>
+            <div class="status-pill">Model ready</div>
+        </header>
+
+        <section class="layout">
+            <form class="panel predictor" method="POST">
+                <h2 class="panel-title">Prediction input</h2>
+                <p class="panel-subtitle">Use age, annual income, and gender to generate a spending score from 1 to 100.</p>
+
+                <div class="form-group">
+                    <label for="age">Age</label>
+                    <input type="number" id="age" name="age" min="1" max="120" step="0.1" value="{{ form_values.age }}" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="income">Annual income (k$)</label>
+                    <input type="number" id="income" name="income" min="0" max="300" step="0.1" value="{{ form_values.income }}" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="gender">Gender</label>
+                    <select id="gender" name="gender" required>
+                        <option value="Female" {% if form_values.gender == 'Female' %}selected{% endif %}>Female</option>
+                        <option value="Male" {% if form_values.gender == 'Male' %}selected{% endif %}>Male</option>
+                    </select>
+                </div>
+
+                <button type="submit">Predict spending score</button>
+
+                {% if error %}
+                <div class="error">
+                    <strong>Prediction failed</strong>
+                    <p>{{ error }}</p>
+                </div>
+                {% endif %}
+
+                {% if prediction is not none %}
+                <div class="result">
+                    <strong>Predicted spending score</strong>
+                    <div class="score">
+                        <strong>{{ prediction }}</strong>
+                        <span>/ 100</span>
+                    </div>
+                </div>
+                {% endif %}
+            </form>
+
+            <div class="insights">
+                <section class="stats-grid" aria-label="Dataset summary">
+                    <div class="stat">
+                        <span>Customers</span>
+                        <strong>{{ stats.customers }}</strong>
+                    </div>
+                    <div class="stat">
+                        <span>Avg age</span>
+                        <strong>{{ stats.avg_age }}</strong>
+                    </div>
+                    <div class="stat">
+                        <span>Avg income</span>
+                        <strong>{{ stats.avg_income }}k</strong>
+                    </div>
+                    <div class="stat">
+                        <span>Avg score</span>
+                        <strong>{{ stats.avg_score }}</strong>
+                    </div>
+                </section>
+
+                <section class="chart-grid">
+                    <figure class="chart">
+                        <img src="{{ url_for('assets', filename='income_vs_spending.png') }}" alt="Income versus spending score chart">
+                        <figcaption>Income vs spending score</figcaption>
+                    </figure>
+                    <figure class="chart">
+                        <img src="{{ url_for('assets', filename='actual_vs_predicted.png') }}" alt="Actual versus predicted score chart">
+                        <figcaption>Actual vs predicted score</figcaption>
+                    </figure>
+                </section>
+
+                <a class="visual-link" href="{{ url_for('assets', filename='customer_3d_visualization.html') }}" target="_blank" rel="noreferrer">
+                    <span>
+                        <strong>Open 3D customer visualization</strong>
+                        <span>Explore customer segments by age, income, and score.</span>
+                    </span>
+                    <b>&rarr;</b>
+                </a>
+            </div>
+        </section>
+    </main>
+</body>
+</html>
